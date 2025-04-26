@@ -1,59 +1,42 @@
 pipeline {
     agent any
-    
+
     environment {
-        DEPLOY_SERVER = '13.60.210.45'
-        DEPLOY_USER = 'admin'
-        DEPLOY_DIR = '/path/to/deployment/directory'
+        DEPLOY_SERVER = '51.20.116.95'           // Your server IP
+        DEPLOY_USER = 'admin'                    // Server user
+        DEPLOY_DIR = '/path/to/deployment/directory'  // Path where code is located on server
     }
-    
+
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/Akashp-devops/Jenkins-Calculator.git'  // Your GitHub repo URL
+                git 'https://github.com/Akashp-devops/Jenkins-Calculator.git'  
             }
         }
-        
-        stage('Build Application') {
+
+        stage('Install Dependencies') {
             steps {
                 script {
-                    // Example of building a Java application with Maven
-                    sh 'mvn clean install'
+                    // Install Node.js packages
+                    sh 'npm install'
                 }
             }
         }
-        
+
         stage('Deploy Application') {
             steps {
                 script {
-                    // SSH into the server and deploy the app
-                    sshagent(credentials: ['ssh-credentials-id']) {
+                    // SSH into server and pull latest code
+                    sshagent(credentials: ['ssh-credentials-id']) {  
                         sh """
-                            ssh ${DEPLOY_USER}@${DEPLOY_SERVER} <<EOF
+                            ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} <<EOF
                                 cd ${DEPLOY_DIR}
                                 git pull origin main
-                                # Replace this with the actual deployment command, e.g.:
-                                # ./deploy.sh
+                                npm install
                             EOF
                         """
                     }
                 }
             }
         }
-        
-        stage('Clean Up') {
-            steps {
-                cleanWs()  // Cleans up workspace after the build and deploy
-            }
-        }
-    }
-    
-    post {
-        success {
-            echo 'Deployment Successful!'
-        }
-        failure {
-            echo 'Deployment Failed!'
-        }
-    }
-}
+
